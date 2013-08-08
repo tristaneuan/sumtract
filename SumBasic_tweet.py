@@ -14,12 +14,12 @@ from collections import defaultdict
 import nltk
 import re
 
-def get_sentences(filename):
+def get_sentences(text):
     """
     Removes stopwords from, stems and tokenizes sentences.
     Computes probability distribution over words.
 
-    @param filename -- name of file containing sentences
+    @param text -- text to get sentences from
 
     @return distribution -- probability distribution of words
     @return tweets -- list of clean sentences
@@ -30,12 +30,14 @@ def get_sentences(filename):
     stopwords = nltk.corpus.stopwords.words('english') + ['n']
     stemmer = nltk.stem.PorterStemmer()
     tokenize = nltk.word_tokenize
+    sentence_tokenize = nltk.tokenize.punkt.PunktSentenceTokenizer()
 
     tweets, processed_sentences = [], []
     distribution = defaultdict(int)
     total = 0
 
-    for line in open(filename):
+    #for line in sentence_tokenize.tokenize(open(filename).read()):
+    for line in sentence_tokenize.tokenize(text):
         line = line.strip()
         if not line: continue
 
@@ -150,35 +152,16 @@ def twitterize(sentence):
     sentence = re.sub(r' - ', r'-', sentence)     # remove space around hyphens
 
     # twitterize
-    sentence = re.sub(r'(eight|ate|ait)(\b|ed|d)', r'8\2', sentence)
-    sentence = re.sub(r'for', r'4', sentence)
     sentence = re.sub(r'minute', r'min', sentence)
     sentence = re.sub(r'hour', r'hr', sentence)
-    sentence = re.sub(r'says', r'sez', sentence)
-    sentence = re.sub(r'[Yy]ou\'re|\b[Yy]our\b', r'Ur', sentence)
-    sentence = re.sub(r'\b[Yy]ou\b', r'U', sentence)
-    sentence = re.sub(r'[Ww]ere|[Ww]e\'re', r'wr', sentence)
-    sentence = re.sub(r'\b[Tt]o\b|[Tt]oo', r'2', sentence)
-    sentence = re.sub(r'[Bb]e', r'B', sentence)
     sentence = re.sub(r'\b[Ww]ith\b', r' w ', sentence)
     sentence = re.sub(r'[Ww]ithout', r'w/o', sentence)
-    sentence = re.sub(r'[Aa]t', r'@', sentence)
-    sentence = re.sub(r'\b[Aa]re\b|\b[Oo]ur\b', r'R', sentence)
-    sentence = re.sub(r'[Gg]reat', r'gr8', sentence)
-    sentence = re.sub(r'[Tt]hey\'re|[Tt]heir|[Tt]here', r'thr', sentence)
+    sentence = re.sub(r'\b[Aa]t\b', r' @ ', sentence)
     sentence = re.sub(r' is', r"'s", sentence)
     sentence = re.sub(r'cannot', r"can't", sentence)
-    sentence = re.sub(r'[Ww]hy', r'Y', sentence)
-    sentence = re.sub(r'[Nn]ever', r'nvr', sentence)
-    sentence = re.sub(r'[Ll]ike', r'lk', sentence)
-    sentence = re.sub(r'[Tt]hanks', r'thx', sentence)
-    sentence = re.sub(r'[Pp]lease', r'pls', sentence)
-    sentence = re.sub(r'\bin\b', r'n', sentence)
-    sentence = re.sub(r'and', r'&', sentence)
+    sentence = re.sub(r'\band\b', r' & ', sentence)
     sentence = re.sub(r'[Dd]ollar|[Dd]ollars', r'$', sentence)
     sentence = re.sub(r'[Pp]ercent|[Pp]ercentage', r'%', sentence)
-    sentence = re.sub(r'er ', r'r ', sentence)
-    sentence = re.sub(r'tion', r'tn', sentence)
     sentence = re.sub(r'[Yy]ear', r'yr', sentence)
 
     sentence = re.sub(r' +', r' ', sentence)     # delete extra spaces
@@ -378,6 +361,11 @@ def translate_numbers(places):
         numbers.append(number)
     
     return numbers
+
+def easy_summarize(text, N=120):
+    """ N represents the character length of the summary """
+    distribution, tweets, processed_sentences = get_sentences(text)
+    return summarize(distribution, tweets, processed_sentences, N)
 
 def main():
     """
