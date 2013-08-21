@@ -14,12 +14,12 @@ from collections import defaultdict
 import nltk
 import re
 
-def get_sentences(filename):
+def get_sentences(text):
     """
     Removes stopwords from, stems and tokenizes sentences.
     Computes probability distribution over words.
 
-    @param filename -- name of file containing sentences
+    @param text -- text to get sentences from
 
     @return distribution -- probability distribution of words
     @return clean_sentences -- list of clean sentences
@@ -30,12 +30,14 @@ def get_sentences(filename):
     stopwords = nltk.corpus.stopwords.words('english') + ['n']
     stemmer = nltk.stem.PorterStemmer()
     tokenize = nltk.word_tokenize
+    sentence_tokenize = nltk.tokenize.punkt.PunktSentenceTokenizer()
 
     clean_sentences, processed_sentences = [], []
     distribution = defaultdict(int)
     total = 0
 
-    for line in open(filename):
+    #for line in open(filename):
+    for line in sentence_tokenize.tokenize(text):
         line = line.strip()
         if not line: continue
 
@@ -186,6 +188,11 @@ def convert_to_html(summary, N):
     html += '</body>\n</html>\n'
 
     return html
+
+def easy_multi_summarize(text, N=100):
+    """ N represents the word length of the summary """
+    distribution, clean_sentences, processed_sentences = get_sentences(text)
+    return summarize(distribution, clean_sentences, processed_sentences, N)
 
 def main():
     """

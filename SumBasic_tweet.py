@@ -138,26 +138,31 @@ def twitterize(sentence):
 
     sentence = convert_numbers(sentence)
 
-    punc = re.compile(r' +(\.|%|\?)')
+    punc = re.compile(r' +(\.|%|\?|\:|;|,)')
     clitics = re.compile(r' +(\'s|\'re|n\'t|\'ve|\'m|\'ll|\'d)')
 
     # clean up a bit
     sentence = sentence.strip()
     sentence = re.sub(punc, r'\1', sentence)      # attach punc to previous word
-    sentence = re.sub(r'[:;!,]', r' ', sentence)  # delete some punctuation
+    #sentence = re.sub(r'[:;!,]', r' ', sentence)  # delete some punctuation
+    sentence = re.sub(r'[\.!]', r' ', sentence)  # delete some punctuation
     sentence = re.sub(r'\\/', '/', sentence)      # slash attaches to left and right words
     sentence = re.sub(r'\$ +', '$', sentence)     # attach $ to next word
     sentence = re.sub(r'`+|\'\'', r'', sentence)  # remove quotes
     sentence = re.sub(clitics, r'\1', sentence)   # attach clitics to previous word
     sentence = re.sub(r' - ', r'-', sentence)     # remove space around hyphens
 
+    # remove parenthetical clauses
+    sentence = re.sub(r'\(.*\)', r'', sentence)
+    sentence = re.sub(r', and\b', r' and', sentence)
+
     # twitterize
     sentence = re.sub(r'minute', r'min', sentence)
     sentence = re.sub(r'hour', r'hr', sentence)
     sentence = re.sub(r'\b[Ww]ith\b', r' w ', sentence)
     sentence = re.sub(r'[Ww]ithout', r'w/o', sentence)
-    sentence = re.sub(r'\b[Aa]t\b', r' @ ', sentence)
-    sentence = re.sub(r' is', r"'s", sentence)
+    #sentence = re.sub(r'\b[Aa]t\b', r' @ ', sentence)
+    #sentence = re.sub(r' is', r"'s", sentence)
     sentence = re.sub(r'cannot', r"can't", sentence)
     sentence = re.sub(r'\band\b', r' & ', sentence)
     sentence = re.sub(r'[Dd]ollar|[Dd]ollars', r'$', sentence)

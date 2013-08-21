@@ -299,6 +299,53 @@ class WordList:
 	def __iter__(self):
 		return iter(self.words)
 
+def easy_simplify(parsed):
+	candidates = SetQueue()	# holds candidates for simplification
+	clause_types = ["noun_appositive", "lead_adverbial", "gerundive", "nonrestrictive_relative", "intrasentential_attribution"]
+
+	# read in parses, convert, store
+	# convert to frozen tree, add to set
+	candidates.put(nltk.ImmutableTree(parsed))
+
+	# check candidate parses for simplification until exhausted
+	while not candidates.empty():
+		tree = candidates.get()
+		# iterate over node indices except root
+		for abs_node_index in tree.treepositions()[1:]:
+			# iterate through clause detection functions
+			for clause_type in clause_types:
+				if clause_type == "intrasentential_attribution":
+					try:
+						# check if current subtree is the start of an intrasentential
+						# attribution, and grab all attributions within it
+						attributed_node_indices = detect_isa(tree, abs_node_index)
+					except:
+						continue
+					else:
+						for attributed_node_index in attributed_node_indices:
+							# raise each attributed node to the node 
+							# that starts the ida (one at a time), and 
+							# enqueue each new version of the tree
+							simplified = nltk.Tree.convert(tree)
+							simplified[abs_node_index] = simplified[attributed_node_index]
+							candidates.put(simplified.freeze())
+				else:
+					detector = detector_generator(clause_type)
+					if detector(tree, abs_node_index):
+						parent_index = abs_node_index[:-1]		# absolute node index is tuple of len > 0, index of parent is tuple of all but last element
+						child_index = abs_node_index[-1]
+						simplified = nltk.Tree.convert(tree)	# get unfrozen copy of tree for mutation
+						popped = simplified[parent_index].pop(child_index)	# pop index must be int, so we pop correct child of parent instead of child directly
+						candidates.put(simplified.freeze())
+						if clause_type == "gerundive":
+							candidates.put(popped.freeze())
+
+	# set of items enqueued onto SetQueue, consists 
+	# only of original parses and simplifications
+	simplifications = candidates.all_items
+
+	return "\n".join([" ".join(tree.leaves()) for tree in simplifications])
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="A parse tree simplification script")
 	parser.add_argument("parse_path", action="store", help="Path to file of parses for simplification")
@@ -353,6 +400,5 @@ if __name__ == "__main__":
 	# only of original parses and simplifications
 	simplifications = candidates.all_items
 
-	with open(args.output_path, "w") as output_file:
-		for tree in simplifications:
-			print >> output_file, " ".join(tree.leaves())
+	for tree in simplifications:
+		print >> output_file, " ".join(tree.leaves())
